@@ -47,12 +47,14 @@ export default function HomeClient() {
 
 							{/* Desktop navigation */}
 							<div className="hidden sm:block">
-								<Button
-									variant="outline"
-									className="text-white border-white hover:bg-white hover:text-black bg-transparent"
-								>
-									Sign In
-								</Button>
+								<a href="/login">
+									<Button
+										variant="outline"
+										className="text-white border-white hover:bg-white hover:text-black bg-transparent"
+									>
+										Login
+									</Button>
+								</a>
 							</div>
 
 							{/* Mobile menu button */}
@@ -75,13 +77,15 @@ export default function HomeClient() {
 									className="sm:hidden mt-4 pb-4 border-t border-white/20"
 								>
 									<div className="pt-4">
-										<Button
-											variant="outline"
-											className="w-full text-white border-white hover:bg-white hover:text-black bg-transparent"
-											onClick={() => setMobileMenuOpen(false)}
-										>
-											Sign In
-										</Button>
+										<a href="/login">
+											<Button
+												variant="outline"
+												className="w-full text-white border-white hover:bg-white hover:text-black bg-transparent"
+												onClick={() => setMobileMenuOpen(false)}
+											>
+												Login
+											</Button>
+										</a>
 									</div>
 								</motion.div>
 							)}
