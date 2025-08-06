@@ -58,8 +58,8 @@ export default function ChatInterface() {
 		[selectedModel, isLoading],
 	)
 
-	const handleModelChange = useCallback((modelId: keyof typeof MODEL_RESPONSES) => {
-		setSelectedModel(modelId)
+	const handleModelChange = useCallback((modelId: string) => {
+		setSelectedModel(modelId as keyof typeof MODEL_RESPONSES)
 		const systemMessage: ChatMessage = {
 			role: "assistant",
 			content: `Switched to ${modelId.toUpperCase()}. How can I assist you with this model?`,

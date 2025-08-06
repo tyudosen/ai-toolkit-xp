@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 import "./globals.css"
 
 const inter = Inter({
@@ -45,7 +46,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        <AuthKitProvider>
+          {children}
+        </AuthKitProvider>
+      </body>
     </html>
   )
 }
