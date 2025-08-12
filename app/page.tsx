@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { cookies } from 'next/headers'
 import HomePageClient from "./home-page-client"
 import { getSignUpUrl, withAuth } from "@workos-inc/authkit-nextjs";
 import Link from "next/link";
+import { env } from "@/env";
 
 export const metadata: Metadata = {
   title: "AI Toolkit - The Ultimate AI Tools Suite",
@@ -24,6 +26,23 @@ export default async function HomePage() {
   //     </>
   //   );
   // }
+  //
+  // const cookie_store = await cookies()
+  // const wos_session = cookie_store.get(env.WORKS_OS_COOKIE_NAME)
+  // const testRes = await fetch('http://localhost:3007/research?query=tips for improving my italian listening skills', {
+  //   credentials: 'include',
+  //   headers: {
+  //     'Cookie': wos_session?.value || ''
+  //   }
+  // })
+  //
+  // const testData = await testRes.json();
+  //
+  // console.log('check -->', {
+  //   testRes,
+  //   testData
+  // })
+
 
   return <HomePageClient />
 }
