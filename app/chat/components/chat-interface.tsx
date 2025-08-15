@@ -1,128 +1,183 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { motion } from "framer-motion"
-import { ChatHeader } from "./chat-header"
-import { ChatMessages } from "./chat-messages"
-import { ChatInput } from "./chat-input"
-import { ModelSelector } from "./model-selector"
-import type { ChatMessage } from "@/lib/types"
+import { useState } from "react"
+import { useSidebar } from "@/lib/hooks/use-sidebar"
+import { ChatSidebar } from "@/components/chat/chat-sidebar"
+import { ChatHeader } from "@/components/chat/chat-header"
+import { ChatMessages } from "@/components/chat/chat-messages"
+import { ChatInput } from "@/components/chat/chat-input"
+import { AI_MODELS } from "@/lib/constants"
+import type { ChatSession, ChatMessage } from "@/lib/types"
 
-const INITIAL_MESSAGES: ChatMessage[] = [
+const mockChats: ChatSession[] = [
 	{
-		role: "assistant",
-		content: "Hello! I'm your AI assistant. How can I help you today?",
-		timestamp: new Date(),
+		id: "1",
+		title: "Getting Started",
+		model: "GPT-4",
+		createdAt: new Date(),
+		updatedAt: new Date(),
+		messages: [
+			{
+				id: "1",
+				role: "assistant",
+				content: "Hello! I'm your AI assistant. How can I help you today?",
+				timestamp: new Date(),
+			},
+		],
+	},
+	{
+		id: "2",
+		title: "Code Review Help",
+		model: "GPT-4",
+		createdAt: new Date(Date.now() - 3600000),
+		updatedAt: new Date(Date.now() - 3600000),
+		messages: [
+			{
+				id: "1",
+				role: "user",
+				content: "Can you help me review this React component?",
+				timestamp: new Date(Date.now() - 3600000),
+			},
+		],
+	},
+	{
+		id: "3",
+		title: "Writing Assistant",
+		model: "Claude 3",
+		createdAt: new Date(Date.now() - 7200000),
+		updatedAt: new Date(Date.now() - 7200000),
+		messages: [
+			{
+				id: "1",
+				role: "user",
+				content: "Help me write a professional email",
+				timestamp: new Date(Date.now() - 7200000),
+			},
+		],
 	},
 ]
 
-const MODEL_RESPONSES = {
-	"gpt-4": "This is a detailed response from GPT-4. I can help with complex reasoning, analysis, and creative tasks.",
-	"gpt-3.5-turbo": "Quick response from GPT-3.5 Turbo! I'm fast and efficient for most conversational tasks.",
-	"claude-3": "Claude 3 here. I excel at thoughtful analysis and can help with reasoning through complex problems.",
-	"gemini-pro": "Gemini Pro responding. I can handle multimodal tasks and provide comprehensive assistance.",
-} as const
+export default function ChatPage() {
+	const [chats, setChats] = useState<ChatSession[]>(mockChats)
+	const [currentChatId, setCurrentChatId] = useState("1")
+	const [selectedModel, setSelectedModel] = useState("gpt-4")
+	const [isTyping, setIsTyping] = useState(false)
+	const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar(true)
 
-export default function ChatInterface() {
-	const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES)
-	const [selectedModel, setSelectedModel] = useState<keyof typeof MODEL_RESPONSES>("gpt-4")
-	const [isLoading, setIsLoading] = useState(false)
+	const currentChat = chats.find((chat) => chat.id === currentChatId)
+	const messages = currentChat?.messages || []
 
-	const handleSendMessage = useCallback(
-		async (content: string) => {
-			if (!content.trim() || isLoading) return
+	const handleSend = async (content: string) => {
+		if (!currentChat) return
 
-			const userMessage: ChatMessage = {
-				role: "user",
-				content: content.trim(),
+		const userMessage: ChatMessage = {
+			id: Date.now().toString(),
+			role: "user",
+			content,
+			timestamp: new Date(),
+		}
+
+		setChats((prev) =>
+			prev.map((chat) =>
+				chat.id === currentChatId
+					? { ...chat, messages: [...chat.messages, userMessage], updatedAt: new Date() }
+					: chat,
+			),
+		)
+
+		setIsTyping(true)
+
+		// Simulate AI response
+		setTimeout(() => {
+			const aiMessage: ChatMessage = {
+				id: (Date.now() + 1).toString(),
+				role: "assistant",
+				content: `I understand your question. This is a response from ${AI_MODELS.find((m) => m.id === selectedModel)?.name}. In a real implementation, this would connect to the selected AI service.`,
 				timestamp: new Date(),
 			}
 
-			setMessages((prev) => [...prev, userMessage])
-			setIsLoading(true)
-
-			// Simulate AI response
-			setTimeout(
-				() => {
-					const assistantMessage: ChatMessage = {
-						role: "assistant",
-						content: MODEL_RESPONSES[selectedModel],
-						timestamp: new Date(),
-					}
-					setMessages((prev) => [...prev, assistantMessage])
-					setIsLoading(false)
-				},
-				1000 + Math.random() * 1000,
+			setChats((prev) =>
+				prev.map((chat) =>
+					chat.id === currentChatId
+						? { ...chat, messages: [...chat.messages, aiMessage], updatedAt: new Date() }
+						: chat,
+				),
 			)
-		},
-		[selectedModel, isLoading],
-	)
+			setIsTyping(false)
+		}, 1500)
+	}
 
-	const handleModelChange = useCallback((modelId: string) => {
-		setSelectedModel(modelId as keyof typeof MODEL_RESPONSES)
-		const systemMessage: ChatMessage = {
-			role: "assistant",
-			content: `Switched to ${modelId.toUpperCase()}. How can I assist you with this model?`,
-			timestamp: new Date(),
+	const copyMessage = (content: string) => {
+		navigator.clipboard.writeText(content)
+	}
+
+	const createNewChat = () => {
+		const newChat: ChatSession = {
+			id: Date.now().toString(),
+			title: "New Chat",
+			model: selectedModel,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			messages: [
+				{
+					id: "1",
+					role: "assistant",
+					content: "Hello! I'm your AI assistant. How can I help you today?",
+					timestamp: new Date(),
+				},
+			],
 		}
-		setMessages((prev) => [...prev, systemMessage])
-	}, [])
+		setChats((prev) => [newChat, ...prev])
+		setCurrentChatId(newChat.id)
+	}
+
+	const deleteChat = (chatId: string) => {
+		setChats((prev) => prev.filter((chat) => chat.id !== chatId))
+		if (currentChatId === chatId && chats.length > 1) {
+			const remainingChats = chats.filter((chat) => chat.id !== chatId)
+			setCurrentChatId(remainingChats[0]?.id || "")
+		}
+	}
+
+	const handleThumbsUp = (messageId: string) => {
+		console.log("Thumbs up for message:", messageId)
+	}
+
+	const handleThumbsDown = (messageId: string) => {
+		console.log("Thumbs down for message:", messageId)
+	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-			<div className="h-screen flex flex-col w-full max-w-7xl mx-auto">
-				<motion.div
-					initial={{ opacity: 0, y: -20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.6 }}
-					className="flex-shrink-0"
-				>
-					<ChatHeader />
-				</motion.div>
+		<div className="h-[calc(100vh-4rem)] bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 flex">
+			<ChatSidebar
+				isOpen={sidebarOpen}
+				onToggle={toggleSidebar}
+				chats={chats}
+				currentChatId={currentChatId}
+				selectedModel={selectedModel}
+				onChatSelect={setCurrentChatId}
+				onNewChat={createNewChat}
+				onDeleteChat={deleteChat}
+				onModelChange={setSelectedModel}
+			/>
 
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.6, delay: 0.1 }}
-					className="flex-1 flex flex-col min-h-0 px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6"
-				>
-					{/* Desktop Model Selector */}
-					<div className="hidden xl:block mb-4 lg:mb-6 relative z-10">
-						<ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} variant="desktop" />
-					</div>
+			<div className="flex-1 flex flex-col">
+				<ChatHeader
+					chatTitle={currentChat?.title || "AI Assistant"}
+					selectedModel={selectedModel}
+					onSidebarToggle={toggleSidebar}
+					sidebarOpen={sidebarOpen}
+				/>
 
-					{/* Chat Container */}
-					<div className="flex-1 flex flex-col bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl lg:rounded-2xl overflow-hidden shadow-2xl">
-						{/* Chat Header */}
-						<div className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 bg-white/5">
-							<div className="flex items-center justify-between">
-								<h2 className="text-white text-base sm:text-lg lg:text-xl font-semibold truncate">
-									Chat with {selectedModel.toUpperCase()}
-								</h2>
-								<div className="hidden sm:block flex-shrink-0 ml-4">
-									<span className="text-xs text-gray-400 bg-white/10 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
-										{messages.length - 1} messages
-									</span>
-								</div>
-							</div>
-						</div>
+				<ChatMessages
+					messages={messages}
+					isTyping={isTyping}
+					onCopyMessage={copyMessage}
+					onThumbsUp={handleThumbsUp}
+					onThumbsDown={handleThumbsDown}
+				/>
 
-						{/* Messages Area */}
-						<div className="flex-1 min-h-0">
-							<ChatMessages messages={messages} isLoading={isLoading} currentModel={selectedModel} />
-						</div>
-
-						{/* Input Area */}
-						<div className="flex-shrink-0 p-3 sm:p-4 lg:p-6 border-t border-white/10 bg-white/5">
-							{/* Mobile/Tablet Model Selector */}
-							<div className="xl:hidden mb-3 sm:mb-4">
-								<ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} variant="mobile" />
-							</div>
-
-							<ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} selectedModel={selectedModel} />
-						</div>
-					</div>
-				</motion.div>
+				<ChatInput onSend={handleSend} disabled={isTyping} />
 			</div>
 		</div>
 	)
